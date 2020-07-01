@@ -7,22 +7,22 @@ required_plugins.each do |plugin|
 end
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "bento/ubuntu-19.04"
-  config.vm.define "19.04"
-  config.disksize.size = '100GB'
+  config.vm.box = "bento/ubuntu-20.04"
+  config.vm.define "20.04"
+  config.disksize.size = '300GB'
   config.vbguest.auto_update = false
 
   config.vm.provider "virtualbox" do |vbox|
     # Ram, cpu and gui for box
     vbox.memory = 16384
     vbox.cpus = 6
-    vbox.gui = true
+    vbox.gui = false
 
     # Enable symlinks in Virtualbox,
     vbox.customize ["setextradata", :id, "VBoxInternal2/SharedFoldersEnableSymlinksCreate/projects", "1"]
     vbox.customize ["setextradata", :id, "VBoxInternal2/SharedFoldersEnableSymlinksCreate/v-root", "1"]
-    
-    # Promiscuous mode for nic2 
+
+    # Promiscuous mode for nic2
     vbox.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
 
     # Configure graphics
@@ -31,7 +31,7 @@ Vagrant.configure("2") do |config|
     vbox.customize ["modifyvm", :id, "--graphicscontroller", "vboxvga"]
     vbox.customize ["modifyvm", :id, "--accelerate2dvideo", "off"]
     vbox.customize ["modifyvm", :id, "--accelerate3d", "off"]
-    vbox.customize ['modifyvm', :id, '--clipboard', 'bidirectional'] 
+    vbox.customize ['modifyvm', :id, '--clipboard', 'bidirectional']
     vbox.customize ["modifyvm", :id, "--draganddrop", "bidirectional"]
   end
 
@@ -44,16 +44,21 @@ Vagrant.configure("2") do |config|
 
   # Configure networking
   # Map port 80(ish), for applications which don't use dynamic ports
-  config.vm.network :forwarded_port, guest: 9088, host: 9088
-  config.vm.network :forwarded_port, guest: 10210, host: 10210
-  config.vm.network :forwarded_port, guest: 8088, host: 8088
-  config.vm.network :forwarded_port, guest: 9210, host: 9210
-  config.vm.network :forwarded_port, guest: 7088, host: 7088
-  config.vm.network :forwarded_port, guest: 8210, host: 8210
-  config.vm.network :forwarded_port, guest: 3000, host: 3000
+
+  for port in 8088..8145
+    config.vm.network :forwarded_port, guest: port, host: port
+  end
+
+  # Map a whole bunch of ports which can be used by application APIs
+  for port in 9210..9265
+    config.vm.network :forwarded_port, guest: port, host: port
+  end
 
   # Expose docker
   config.vm.network :forwarded_port, guest: 2375, host: 2375, host_ip: "127.0.0.1", id: "docker"
+
+  # Expose pgadmin
+  config.vm.network :forwarded_port, guest: 80, host: 81, host_ip: "127.0.0.1", id: "pgadmin"
 
   # Map a ports which may be allocated to a docker container
   for port in 32768..32850
@@ -65,8 +70,8 @@ Vagrant.configure("2") do |config|
 
     config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
-    sudo apt-get install -y apt-transport-https 
-    sudo apt-get install -y ca-certificates 
+    sudo apt-get install -y apt-transport-https
+    sudo apt-get install -y ca-certificates
     sudo apt-get install -y dkms
     sudo apt-get install -y curl
     sudo apt-get install -y software-properties-common
