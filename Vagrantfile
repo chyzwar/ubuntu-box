@@ -54,6 +54,11 @@ Vagrant.configure("2") do |config|
     config.vm.network :forwarded_port, guest: port, host: port
   end
 
+  config.vm.network :forwarded_port, guest: 3000, host: 3000
+  config.vm.network :forwarded_port, guest: 4000, host: 4000
+  config.vm.network :forwarded_port, guest: 81, host: 81
+  config.vm.network :forwarded_port, guest: 82, host: 82
+
   # Expose docker
   config.vm.network :forwarded_port, guest: 2375, host: 2375, host_ip: "127.0.0.1", id: "docker"
 
